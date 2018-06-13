@@ -33,6 +33,7 @@
 #include "engines/blackhole.h"
 #include "engines/kvtree2.h"
 #include "engines/btree.h"
+#include "engines/mvtree.h"
 
 namespace pmemkv {
 
@@ -40,6 +41,26 @@ KVEngine* KVEngine::Open(const string& engine, const string& path, const size_t 
     try {
         if (engine == blackhole::ENGINE) {
             return new blackhole::Blackhole();
+        } else if(engine == mvtree::ENGINE) {
+            return new mvtree::MVTree(path, size);
+        }  else if (engine == kvtree2::ENGINE) {
+            return new kvtree2::KVTree(path, size);
+        } else if (engine == btree::ENGINE) {
+            return new btree::BTreeEngine(path, size);
+        } else {
+            return nullptr;
+        }
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+KVEngine* KVEngine::OpenOid(const string& engine, const string& path, PMEMoid oid, const size_t size) {
+    try {
+        if (engine == blackhole::ENGINE) {
+            return new blackhole::Blackhole();
+        } else if(engine == mvtree::ENGINE) {
+            return new mvtree::MVTree(path, oid, size);
         } else if (engine == kvtree2::ENGINE) {
             return new kvtree2::KVTree(path, size);
         } else if (engine == btree::ENGINE) {
@@ -52,10 +73,40 @@ KVEngine* KVEngine::Open(const string& engine, const string& path, const size_t 
     }
 }
 
+KVEngine* KVEngine::OpenPopOid(const string& engine, PMEMobjpool* pop, PMEMoid oid, const size_t size) {
+    try {
+        if(engine == mvtree::ENGINE) {
+            return new mvtree::MVTree(pop, oid, size);
+        } else {
+            return nullptr;
+        }
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+
 void KVEngine::Close(KVEngine* kv) {
     auto engine = kv->Engine();
     if (engine == blackhole::ENGINE) {
         delete (blackhole::Blackhole*) kv;
+    } else if (engine == mvtree::ENGINE) {
+        delete (mvtree::MVTree*) kv;
+    } else if (engine == kvtree2::ENGINE) {
+        delete (kvtree2::KVTree*) kv;
+    } else if (engine == btree::ENGINE) {
+        delete (btree::BTreeEngine*) kv;
+    }
+}
+
+void KVEngine::Free(KVEngine* kv) {
+    auto engine = kv->Engine();
+    kv->Free();
+    // TODO free and close shall be transactional?
+    if (engine == blackhole::ENGINE) {
+        delete (blackhole::Blackhole*) kv;
+    } else if (engine == mvtree::ENGINE) {
+        delete (mvtree::MVTree*) kv;
     } else if (engine == kvtree2::ENGINE) {
         delete (kvtree2::KVTree*) kv;
     } else if (engine == btree::ENGINE) {
@@ -67,8 +118,15 @@ extern "C" KVEngine* kvengine_open(const char* engine, const char* path, const s
     return KVEngine::Open(engine, path, size);
 };
 
+extern "C" KVEngine* kvengine_open_oid(const char* engine, const char* path, PMEMoid rootoid, const size_t size) {
+    return KVEngine::OpenOid(engine, path, rootoid, size);
+};
+
 extern "C" void kvengine_close(KVEngine* kv) {
     return KVEngine::Close(kv);
+};
+extern "C" void kvengine_free(KVEngine* kv) {
+    return KVEngine::Free(kv);
 };
 
 extern "C" int8_t kvengine_get(KVEngine* kv, const int32_t limit, const int32_t keybytes,
@@ -98,6 +156,14 @@ extern "C" int8_t kvengine_put_ffi(const FFIBuffer* buf) {
 extern "C" int8_t kvengine_remove_ffi(const FFIBuffer* buf) {
     return buf->kv->Remove(string(buf->data, (size_t) buf->keybytes));
 }
+
+extern "C" PMEMoid kvengine_get_rootoid(KVEngine* kv) {
+    return kv->GetRootOid();
+}
+extern "C" PMEMobjpool* kvengine_get_pool(KVEngine* kv) {
+    return kv->GetPool();
+}
+
 
 // todo missing test cases for KVEngine static methods & extern C API
 

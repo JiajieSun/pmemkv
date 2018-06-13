@@ -89,6 +89,56 @@ void KVTree::Analyze(KVTreeAnalysis& analysis) {
     }
     LOG("Analyzed ok");
 }
+void KVTree::ListAllKeyValuePairs(vector<string>& kv_pairs) {
+    LOG("Listing");
+    // iterate persistent leaves for stats
+    auto leaf = pmpool.get_root()->head;
+    while (leaf) {
+        for (int slot = LEAF_KEYS; slot--;) {
+            auto kvslot = leaf->slots[slot].get_rw();
+            if (!kvslot.empty()) {
+              kv_pairs.push_back(string(kvslot.key(), kvslot.keysize()));
+              kv_pairs.push_back(string(kvslot.val(), kvslot.valsize()));
+            }
+        }
+        leaf = leaf->next;  // advance to next linked leaf
+    }
+    LOG("List ok");
+}
+
+void KVTree::ListAllKeys(vector<string>& keys) {
+    LOG("Listing");
+    // iterate persistent leaves for stats
+    auto leaf = pmpool.get_root()->head;
+    while (leaf) {
+        for (int slot = LEAF_KEYS; slot--;) {
+            auto kvslot = leaf->slots[slot].get_rw();
+            if (!kvslot.empty()) {
+              keys.push_back(string(kvslot.key(), kvslot.keysize()));
+            }
+        }
+        leaf = leaf->next;  // advance to next linked leaf
+    }
+    LOG("List ok");
+}
+
+size_t KVTree::TotalNumKeys() {
+    size_t size = 0;
+    LOG("Getting size");
+    // iterate persistent leaves for stats
+    auto leaf = pmpool.get_root()->head;
+    while (leaf) {
+        for (int slot = LEAF_KEYS; slot--;) {
+            auto kvslot = leaf->slots[slot].get_rw();
+            if (!kvslot.empty()) {
+              ++size;
+            }
+        }
+        leaf = leaf->next;  // advance to next linked leaf
+    }
+    LOG("Getting size ok");
+    return size;
+}
 
 KVStatus KVTree::Get(const int32_t limit, const int32_t keybytes, int32_t* valuebytes,
                      const char* key, char* value) {
@@ -199,6 +249,20 @@ KVStatus KVTree::Remove(const string& key) {
         }
     }
     return OK;
+}
+
+
+void KVTree::Free() {
+  LOG("Free the tree"); 
+  // TODO impl
+}
+
+
+PMEMoid KVTree::GetRootOid() {
+  return pmpool.get_root().raw();
+}
+PMEMobjpool* KVTree::GetPool() {
+    return pmpool.get_handle();
 }
 
 // ===============================================================================================

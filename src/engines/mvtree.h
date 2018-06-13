@@ -41,15 +41,17 @@ using std::vector;
 using pmem::obj::p;
 using pmem::obj::persistent_ptr;
 using pmem::obj::make_persistent;
+using pmem::obj::make_persistent_atomic;
 using pmem::obj::transaction;
 using pmem::obj::delete_persistent;
+using pmem::obj::delete_persistent_atomic;
 using pmem::obj::pool;
 using pmem::obj::pool_base;
 
 namespace pmemkv {
-namespace kvtree2 {
+namespace mvtree {
 
-const string ENGINE = "kvtree2";                           // engine identifier
+const string ENGINE = "mvtree";                           // engine identifier
 
 #define INNER_KEYS 4                                       // maximum keys for inner nodes
 #define INNER_KEYS_MIDPOINT (INNER_KEYS / 2)               // halfway point within the node
@@ -57,7 +59,7 @@ const string ENGINE = "kvtree2";                           // engine identifier
 #define LEAF_KEYS 48                                       // maximum keys in tree nodes
 #define LEAF_KEYS_MIDPOINT (LEAF_KEYS / 2)                 // halfway point within the node
 
-class KVSlot {
+class MVSlot {
   public:
     uint8_t hash() const { return get_ph(); }
     uint8_t hash_direct(char *p) const { return *((uint8_t *)(p + sizeof(uint32_t) + sizeof(uint32_t))); }
@@ -88,52 +90,71 @@ class KVSlot {
     persistent_ptr<char[]> kv;                             // buffer for key & value
 };
 
-struct KVLeaf {
-    p<KVSlot> slots[LEAF_KEYS];                            // array of slot containers
-    persistent_ptr<KVLeaf> next;                           // next leaf in unsorted list
+struct MVLeaf {
+    p<MVSlot> slots[LEAF_KEYS];                            // array of slot containers
+    persistent_ptr<MVLeaf> next;                           // next leaf in unsorted list
 };
 
-struct KVRoot {                                            // persistent root object
-    persistent_ptr<KVLeaf> head;                           // head of linked list of leaves
+struct MVRoot {                                            // persistent root object
+    persistent_ptr<MVLeaf> head;                           // head of linked list of leaves
 };
 
-struct KVInnerNode;
+struct MVInnerNode;
 
-struct KVNode {                                            // volatile nodes of the tree
+struct MVNode {                                            // volatile nodes of the tree
     bool is_leaf = false;                                  // indicate inner or leaf node
-    KVInnerNode* parent;                                   // parent of this node (null if top)
-    virtual ~KVNode() = default;
+    MVInnerNode* parent;                                   // parent of this node (null if top)
+    virtual ~MVNode() = default;
 };
 
-struct KVInnerNode final : KVNode {                        // volatile inner nodes of the tree
+struct MVInnerNode final : MVNode {                        // volatile inner nodes of the tree
     uint8_t keycount;                                      // count of keys in this node
     string keys[INNER_KEYS + 1];                           // child keys plus one overflow slot
-    unique_ptr<KVNode> children[INNER_KEYS + 2];           // child nodes plus one overflow slot
+    unique_ptr<MVNode> children[INNER_KEYS + 2];           // child nodes plus one overflow slot
     void assert_invariants();
 };
 
-struct KVLeafNode final : KVNode {                         // volatile leaf nodes of the tree
+struct MVLeafNode final : MVNode {                         // volatile leaf nodes of the tree
     uint8_t hashes[LEAF_KEYS];                             // Pearson hashes of keys
     string keys[LEAF_KEYS];                                // keys stored in this leaf
-    persistent_ptr<KVLeaf> leaf;                           // pointer to persistent leaf
+    persistent_ptr<MVLeaf> leaf;                           // pointer to persistent leaf
 };
 
-struct KVRecoveredLeaf {                                   // temporary wrapper used for recovery
-    unique_ptr<KVLeafNode> leafnode;                       // leaf node being recovered
+struct MVRecoveredLeaf {                                   // temporary wrapper used for recovery
+    unique_ptr<MVLeafNode> leafnode;                       // leaf node being recovered
     string max_key;                                        // highest sorting key present
 };
 
-struct KVTreeAnalysis {                                    // tree analysis structure
+struct MVTreeAnalysis {                                    // tree analysis structure
     size_t leaf_empty;                                     // count of persisted leaves w/o keys
     size_t leaf_prealloc;                                  // count of persisted but unused leaves
     size_t leaf_total;                                     // count of all persisted leaves
     string path;                                           // path when constructed
 };
 
-class KVTree : public KVEngine {                           // hybrid B+ tree engine
+class MVTree : public KVEngine {                           // hybrid B+ tree engine
   public:
-    KVTree(const string& path, size_t size);               // default constructor
-    ~KVTree();                                             // default destructor
+
+    static KVEngine* Open(const string& engine,            // open storage engine
+                          const string& path,              // path to persistent pool
+                          size_t size);                    // size used when creating pool
+
+    static KVEngine* OpenOid(const string& engine,            // open storage engine
+                          const string& path,              // path to persistent pool
+                          PMEMoid rootoid,
+                          size_t size);                    // size used when creating pool
+    static KVEngine* OpenPopOid(const string& engine,            // open storage engine
+                          PMEMobjpool* pop,              // path to persistent pool
+                          PMEMoid rootoid,
+                          size_t size);                    // size used when creating pool
+
+
+    MVTree (const string& path, size_t size);  // default constructor
+    // OID_NULL means create a new tree, using a new pmemobj as the kvroot
+    MVTree (const string& path, PMEMoid oid, size_t size);  // default constructor
+
+    MVTree(PMEMobjpool* pop, PMEMoid oid, size_t size);              
+    ~MVTree();                                             // default destructor
 
     string Engine() final { return ENGINE; }               // engine identifier
     KVStatus Get(int32_t limit,                            // copy value to fixed-size buffer
@@ -146,53 +167,53 @@ class KVTree : public KVEngine {                           // hybrid B+ tree eng
     KVStatus Put(const string& key,                        // copy value from std::string
                  const string& value) final;
     KVStatus Remove(const string& key) final;              // remove value for key
-
     void Free() final;
+
+    void ListAllKeyValuePairs(vector<string>& kv_pairs) final; // list all key value pairs
+
+    void ListAllKeys(vector<string>& keys) final; // list all keys
+
+    size_t TotalNumKeys() final; // get total number of keys.
 
     PMEMoid GetRootOid() final;
     PMEMobjpool* GetPool() final;
 
-    void Analyze(KVTreeAnalysis& analysis);                // report on internal state & stats
 
-    void ListAllKeyValuePairs(vector<string>& kv_pairs) final;      // list all the key value pairs
-
-    void ListAllKeys(vector<string>& keys) final;      // list all the keys
-
-    size_t TotalNumKeys() final;
-
+    void Analyze(MVTreeAnalysis& analysis);                // report on internal state & stats
   protected:
-    KVLeafNode* LeafSearch(const string& key);             // find node for key
-    void LeafFillEmptySlot(KVLeafNode* leafnode,           // write first unoccupied slot found
+    MVLeafNode* LeafSearch(const string& key);             // find node for key
+    void LeafFillEmptySlot(MVLeafNode* leafnode,           // write first unoccupied slot found
                            uint8_t hash,
                            const string& key,
                            const string& value);
-    bool LeafFillSlotForKey(KVLeafNode* leafnode,          // write slot for matching key if found
+    bool LeafFillSlotForKey(MVLeafNode* leafnode,          // write slot for matching key if found
                             uint8_t hash,
                             const string& key,
                             const string& value);
-    void LeafFillSpecificSlot(KVLeafNode* leafnode,        // write slot at specific index
+    void LeafFillSpecificSlot(MVLeafNode* leafnode,        // write slot at specific index
                               uint8_t hash,
                               const string& key,
                               const string& value,
                               int slot);
-    void LeafSplitFull(KVLeafNode* leafnode,               // split full leaf into two leaves
+    void LeafSplitFull(MVLeafNode* leafnode,               // split full leaf into two leaves
                        uint8_t hash,
                        const string& key,
                        const string& value);
-    void InnerUpdateAfterSplit(KVNode* node,               // update parents after leaf split
-                               unique_ptr<KVNode> newnode,
+    void InnerUpdateAfterSplit(MVNode* node,               // update parents after leaf split
+                               unique_ptr<MVNode> newnode,
                                string* split_key);
     uint8_t PearsonHash(const char* data,                  // calculate 1-byte hash for string
                         size_t size);
     void Recover();                                        // reload state from persistent pool
   private:
-    KVTree(const KVTree&);                                 // prevent copying
-    void operator=(const KVTree&);                         // prevent assigning
-    vector<persistent_ptr<KVLeaf>> leaves_prealloc;        // persisted but unused leaves
+    MVTree(const MVTree&);                                 // prevent copying
+    void operator=(const MVTree&);                         // prevent assigning
+    vector<persistent_ptr<MVLeaf>> leaves_prealloc;        // persisted but unused leaves
     const string pmpath;                                   // path when constructed
-    pool<KVRoot> pmpool;                                   // pool for persistent root
-    unique_ptr<KVNode> tree_top;                           // pointer to uppermost inner node
+    pool_base pmpool;
+    persistent_ptr<MVRoot> kv_root;                                      // pointer to persistent root
+    unique_ptr<MVNode> tree_top;                           // pointer to uppermost inner node
 };
 
-} // namespace kvtree
+} // namespace mvtree
 } // namespace pmemkv

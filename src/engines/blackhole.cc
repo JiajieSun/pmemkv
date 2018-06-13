@@ -68,5 +68,22 @@ KVStatus Blackhole::Remove(const string& key) {
     return OK;
 }
 
+void Blackhole::Free() {
+  LOG("Free the tree");
+  // TODO impl
+}
+
+
+PMEMoid Blackhole::GetRootOid() {
+  LOG("GetRootOid");
+  return OID_NULL;
+}
+
+PMEMobjpool* Blackhole::GetPool() {
+  LOG("GetPool");
+  return nullptr;
+}
+
+
 } // namespace blackhole
 } // namespace pmemkv
