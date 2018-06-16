@@ -148,15 +148,16 @@ class MVTree : public KVEngine {                           // hybrid B+ tree eng
                           PMEMoid rootoid,
                           size_t size);                    // size used when creating pool
 
+    // constructor to create or open root object based KVEngine
+    MVTree (const string& path, size_t size);  
 
-    MVTree (const string& path, size_t size);  // default constructor
+    // constructor to create or open pmemobj based KVEngine
     // OID_NULL means create a new tree, using a new pmemobj as the kvroot
-    MVTree (const string& path, PMEMoid oid, size_t size);  // default constructor
-
-    MVTree(PMEMobjpool* pop, PMEMoid oid, size_t size);              
+    MVTree(PMEMobjpool* pop, const PMEMoid& oid);
     ~MVTree();                                             // default destructor
 
     string Engine() final { return ENGINE; }               // engine identifier
+
     KVStatus Get(int32_t limit,                            // copy value to fixed-size buffer
                  int32_t keybytes,
                  int32_t* valuebytes,
@@ -167,6 +168,8 @@ class MVTree : public KVEngine {                           // hybrid B+ tree eng
     KVStatus Put(const string& key,                        // copy value from std::string
                  const string& value) final;
     KVStatus Remove(const string& key) final;              // remove value for key
+
+    // destroy those pmem used
     void Free() final;
 
     void ListAllKeyValuePairs(vector<string>& kv_pairs) final; // list all key value pairs

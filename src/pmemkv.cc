@@ -55,28 +55,10 @@ KVEngine* KVEngine::Open(const string& engine, const string& path, const size_t 
     }
 }
 
-KVEngine* KVEngine::OpenOid(const string& engine, const string& path, PMEMoid oid, const size_t size) {
-    try {
-        if (engine == blackhole::ENGINE) {
-            return new blackhole::Blackhole();
-        } else if(engine == mvtree::ENGINE) {
-            return new mvtree::MVTree(path, oid, size);
-        } else if (engine == kvtree2::ENGINE) {
-            return new kvtree2::KVTree(path, size);
-        } else if (engine == btree::ENGINE) {
-            return new btree::BTreeEngine(path, size);
-        } else {
-            return nullptr;
-        }
-    } catch (...) {
-        return nullptr;
-    }
-}
-
-KVEngine* KVEngine::OpenPopOid(const string& engine, PMEMobjpool* pop, PMEMoid oid, const size_t size) {
+KVEngine* KVEngine::Open(const string& engine, PMEMobjpool* pop, const PMEMoid& oid) {
     try {
         if(engine == mvtree::ENGINE) {
-            return new mvtree::MVTree(pop, oid, size);
+            return new mvtree::MVTree(pop, oid);
         } else {
             return nullptr;
         }
@@ -97,30 +79,23 @@ void KVEngine::Close(KVEngine* kv) {
     } else if (engine == btree::ENGINE) {
         delete (btree::BTreeEngine*) kv;
     }
+    kv = nullptr;
 }
 
 void KVEngine::Free(KVEngine* kv) {
     auto engine = kv->Engine();
     kv->Free();
     // TODO free and close shall be transactional?
-    if (engine == blackhole::ENGINE) {
-        delete (blackhole::Blackhole*) kv;
-    } else if (engine == mvtree::ENGINE) {
-        delete (mvtree::MVTree*) kv;
-    } else if (engine == kvtree2::ENGINE) {
-        delete (kvtree2::KVTree*) kv;
-    } else if (engine == btree::ENGINE) {
-        delete (btree::BTreeEngine*) kv;
-    }
+    KVEngine::Close(kv);
 }
 
 extern "C" KVEngine* kvengine_open(const char* engine, const char* path, const size_t size) {
     return KVEngine::Open(engine, path, size);
 };
 
-extern "C" KVEngine* kvengine_open_oid(const char* engine, const char* path, PMEMoid rootoid, const size_t size) {
-    return KVEngine::OpenOid(engine, path, rootoid, size);
-};
+extern "C" KVEngine* kvengine_open_obj(const char* engine, PMEMobjpool* pop, PMEMoid oid) {
+    return KVEngine::Open(engine, pop, oid);
+}
 
 extern "C" void kvengine_close(KVEngine* kv) {
     return KVEngine::Close(kv);

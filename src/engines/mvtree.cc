@@ -50,6 +50,8 @@ static const string PMPATH_NO_PATH = "nopath";
 // MVTree METHODS
 // ===============================================================================================
 
+// Ctor to access or create KVEngine of the root object
+// path is in a state of not create or not opened
 MVTree::MVTree (const string& path, size_t size): pmpath(path) {
   if ((access(path.c_str(), F_OK) != 0) && (size > 0)) {
     LOG("Creating filesystem pool, path=" << path << ", size=" << to_string(size));
@@ -66,54 +68,25 @@ MVTree::MVTree (const string& path, size_t size): pmpath(path) {
   LOG("Opened ok");
 }
 
-// For this ctor, require pop is already opened, and we won't call pop.close in dtor
-MVTree::MVTree (PMEMobjpool* pop , PMEMoid oid, size_t size): pmpool(pop), pmpath(PMPATH_NO_PATH) {
+// Ctor to access or create KVEngine of non-root object
+// assuming pop is already opened,
+// and we won't call pop.close in dtor
+MVTree::MVTree (PMEMobjpool* pop, const PMEMoid& oid): pmpool(pop), pmpath(PMPATH_NO_PATH) {
   if(pop == nullptr) {
     throw std::invalid_argument( "received PMEMobjpool* nullptr" );
   }
   LOG("Opening pool, pop=" << pop << ", oid=" << oid.off);
   if(OID_IS_NULL(oid)) {
-    transaction::exec_tx(pmpool, [&] {
-      this->kv_root = make_persistent<MVRoot>();
-    });
+    make_persistent_atomic<MVRoot>(pmpool, kv_root);
   } else {
     // TODO check oid is of type MVRoot
-    this->kv_root = oid;
+    kv_root = oid;
   }
 
   Recover();
   LOG("Opened ok");
 }
 
-
-MVTree::MVTree (const string& path, PMEMoid oid, size_t size): pmpath(path) {
-  if ((access(path.c_str(), F_OK) != 0) && (size > 0)) {
-    if(!OID_IS_NULL(oid)) {
-      LOG("Invalid Parameters, new path with an existing PMEMoid is not allowed.");
-      perror("MVTree construction failed due to invalid parameters");
-    } else {
-      LOG("Creating filesystem pool, path=" << path << ", oid=" << oid.off
-                                            << ", size=" << to_string(size));
-      pmpool = pool_base::create(path.c_str(), LAYOUT, size, S_IRWXU);
-      make_persistent_atomic<MVRoot>(pmpool, kv_root);
-    } 
-  } else {
-    LOG("Opening pool, path=" << path << ", oid=" << oid.off);
-    pmpool = pool_base::open(path.c_str(), LAYOUT);
-    if(OID_IS_NULL(oid)) {
-      transaction::exec_tx(pmpool, [&] {
-        this->kv_root = make_persistent<MVRoot>();
-      });
-    } else {
-      // TODO check oid is of type MVRoot
-      this->kv_root = oid;
-    }
- 
-  }
-
-  Recover();
-  LOG("Opened ok");
-}
 
 MVTree::~MVTree() {
   LOG("Closing");
