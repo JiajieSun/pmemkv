@@ -129,6 +129,19 @@ TEST_F(MVTest, BinaryKeyTest) {
     ASSERT_TRUE(kv->Get(key1, &value) == OK && value == "stuff");
     string value2;
     ASSERT_TRUE(kv->Get("a", &value2) == OK && value2 == "should_not_change");
+
+
+
+    // Test for ListAllKeyValuePairs and TotalNumKeys
+    vector<string> kv_pairs;
+    kv->ListAllKeyValuePairs(kv_pairs);
+    EXPECT_EQ(2, kv->TotalNumKeys()) << "TotalNumKeys";
+    // From the hash algorithm of MVTree, key1 will be retrieved first in ListAllKeyValuePairs
+    ASSERT_TRUE(kv_pairs[0] == key1);
+    ASSERT_TRUE(kv_pairs[1] == "stuff");
+    ASSERT_TRUE(kv_pairs[2] == "a");
+    ASSERT_TRUE(kv_pairs[3] =="should_not_change");
+
     ASSERT_TRUE(kv->Remove(key1) == OK);
     string value3;
     ASSERT_TRUE(kv->Get(key1, &value3) == NOT_FOUND);
