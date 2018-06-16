@@ -103,6 +103,19 @@ KVStatus BTreeEngine::Remove(const string& key) {
     return FAILED;
 }
 
+void BTreeEngine::Free() {
+  LOG("Free the tree");
+  // TODO impl
+}
+
+PMEMoid BTreeEngine::GetRootOid() {
+    return pmpool.get_root().raw();
+}
+PMEMobjpool* BTreeEngine::GetPool() {
+    return pmpool.get_handle();
+}
+
+
 void BTreeEngine::Recover() {
     auto root_data = pmpool.get_root();
 

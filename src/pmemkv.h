@@ -46,9 +46,14 @@ typedef enum {                                             // status enumeration
 #include <libpmemobj++/persistent_ptr.hpp>
 #include <libpmemobj++/pool.hpp>
 #include <libpmemobj++/transaction.hpp>
+#include <libpmemobj++/make_persistent_atomic.hpp>
+
+#include <vector>
+
 
 using std::string;
 using std::to_string;
+using std::vector;
 
 namespace pmemkv {
 
@@ -56,10 +61,18 @@ const string LAYOUT = "pmemkv";                            // pool layout identi
 
 class KVEngine {                                           // storage engine implementations
   public:
+    // Open a pmemobj_root based KVEngine
     static KVEngine* Open(const string& engine,            // open storage engine
                           const string& path,              // path to persistent pool
                           size_t size);                    // size used when creating pool
+
+    // Open a pmemobj based KVEngine
+    static KVEngine* Open(const string& engine,  // open storage engine
+                          PMEMobjpool* pop,
+                          const PMEMoid& oid);       // The object stores KVRoot
+
     static void Close(KVEngine* kv);                       // close storage engine
+    static void Free(KVEngine* kv);
 
     virtual string Engine() = 0;                           // engine identifier
     virtual KVStatus Get(int32_t limit,                    // copy value to fixed-size buffer
@@ -72,6 +85,17 @@ class KVEngine {                                           // storage engine imp
     virtual KVStatus Put(const string& key,                // copy value from std::string
                          const string& value) = 0;
     virtual KVStatus Remove(const string& key) = 0;        // remove value for key
+    virtual void Free() = 0;        // remove value for key
+
+    virtual PMEMoid GetRootOid() = 0;
+    virtual PMEMobjpool* GetPool() = 0;
+
+    virtual void ListAllKeyValuePairs(vector<string>& kv_pairs) = 0; // list all key value pairs
+
+    virtual void ListAllKeys(vector<string>& keys) = 0; // list all keys
+
+    virtual size_t TotalNumKeys() = 0; // get total number of keys.
+
 };
 
 #pragma pack(push, 1)
@@ -99,7 +123,14 @@ KVEngine* kvengine_open(const char* engine,                // open storage engin
                         const char* path,
                         size_t size);
 
+
+KVEngine* kvengine_open_obj(const char* engine,                // open storage engine
+                            PMEMobjpool* pop,
+                            PMEMoid oid);
+
 void kvengine_close(KVEngine* kv);                         // close storage engine
+
+void kvengine_free(KVEngine* kv);                         // close storage engine
 
 int8_t kvengine_get(KVEngine* kv,                          // copy value to fixed-size buffer
                     int32_t limit,
@@ -121,6 +152,9 @@ int8_t kvengine_remove(KVEngine* kv,                       // remove value for k
 int8_t kvengine_get_ffi(FFIBuffer* buf);                   // FFI optimized methods
 int8_t kvengine_put_ffi(const FFIBuffer* buf);
 int8_t kvengine_remove_ffi(const FFIBuffer* buf);
+
+PMEMoid kvengine_get_rootoid(KVEngine* kv);
+PMEMobjpool* kvengine_get_pool(KVEngine* kv);
 
 #ifdef __cplusplus
 }
