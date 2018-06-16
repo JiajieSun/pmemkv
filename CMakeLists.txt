@@ -90,7 +90,6 @@ add_executable(pmemkv_test tests/pmemkv_test.cc tests/mock_tx_alloc.cc
                tests/engines/kvtree_test.cc
                tests/engines/mvtree_test.cc
                tests/engines/mvtree_oid_test.cc
-               tests/engines/mvtree_pop_oid_test.cc
 )
 target_link_libraries(pmemkv_test pmemkv libgtest ${CMAKE_DL_LIBS})
 

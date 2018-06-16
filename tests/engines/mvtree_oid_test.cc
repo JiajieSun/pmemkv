@@ -38,12 +38,19 @@ using namespace pmemkv::mvtree;
 
 const string PATH = "/dev/shm/pmemkv";
 const string PATH_CACHED = "/tmp/pmemkv";
+const string LAYOUT = "pmemkv";
 const size_t SIZE = ((size_t) (1024 * 1024 * 1104));
 
 class MVOidEmptyTest : public testing::Test {
 public:
+
+    PMEMobjpool *pop;
     MVOidEmptyTest() {
         std::remove(PATH.c_str());
+        pop = pmemobj_create(PATH.c_str(), LAYOUT.c_str(), SIZE, S_IRWXU);
+    }
+    ~MVOidEmptyTest() {
+        pmemobj_close(pop);
     }
 };
 
@@ -51,21 +58,26 @@ class MVOidTest : public testing::Test {
 public:
     MVTreeAnalysis analysis;
     MVTree *kv;
+    PMEMobjpool *pop;
     PMEMoid rootoid;
 
     MVOidTest() {
         std::remove(PATH.c_str());
+        pop = pmemobj_create(PATH.c_str(), LAYOUT.c_str(), SIZE, S_IRWXU);
         rootoid = OID_NULL;
         Open();
         rootoid = kv->GetRootOid();
     }
 
-    ~MVOidTest() { delete kv; }
+    ~MVOidTest() {
+      delete kv;
+      pmemobj_close(pop);
+    }
 
     void Analyze() {
         analysis = {};
         kv->Analyze(analysis);
-        ASSERT_TRUE(analysis.path == PATH);
+        // TODO ASSERT_TRUE(analysis.path == PATH);
     }
 
     void Reopen() {
@@ -75,7 +87,7 @@ public:
 
 private:
     void Open() {
-        kv = new MVTree(PATH, rootoid, SIZE);
+        kv = new MVTree(pop, rootoid);
     }
 };
 
@@ -85,7 +97,7 @@ private:
 
 
 TEST_F(MVOidEmptyTest, CreateInstanceTestWithOid) {
-    MVTree *kv = new MVTree(PATH, OID_NULL, PMEMOBJ_MIN_POOL);
+    MVTree *kv = new MVTree(pop, OID_NULL);
     MVTreeAnalysis analysis = {};
     kv->Analyze(analysis);
     ASSERT_EQ(analysis.leaf_empty, 0);
@@ -96,30 +108,30 @@ TEST_F(MVOidEmptyTest, CreateInstanceTestWithOid) {
 
 TEST_F(MVOidEmptyTest, FailsToCreateInstanceWithInvalidPathWithOid) {
     try {
-        new MVTree("/tmp/123/234/345/456/567/678/nope.nope", OID_NULL, PMEMOBJ_MIN_POOL);
+        new MVTree(nullptr, OID_NULL);
         FAIL();
     } catch (...) {
         // do nothing, expected to happen
     }
 }
 
-TEST_F(MVOidEmptyTest, FailsToCreateInstanceWithHugeSizeWithOid) {
-    try {
-        new MVTree(PATH, OID_NULL, 9223372036854775807);   // 9.22 exabytes
-        FAIL();
-    } catch (...) {
-        // do nothing, expected to happen
-    }
-}
+// (MVOidEmptyTest, FailsToCreateInstanceWithHugeSizeWithOid) {
+//     try {
+//         new MVTree(pop, OID_NULL, 9223372036854775807);   // 9.22 exabytes
+//         FAIL();
+//     } catch (...) {
+//         // do nothing, expected to happen
+//     }
+// }
 
-TEST_F(MVOidEmptyTest, FailsToCreateInstanceWithTinySizeWithOid) {
-    try {
-        new MVTree(PATH, OID_NULL, PMEMOBJ_MIN_POOL - 1);  // too small
-        FAIL();
-    } catch (...) {
-        // do nothing, expected to happen
-    }
-}
+// (MVOidEmptyTest, FailsToCreateInstanceWithTinySizeWithOid) {
+//     try {
+//         new MVTree(pop, OID_NULL, PMEMOBJ_MIN_POOL - 1);  // too small
+//         FAIL();
+//     } catch (...) {
+//         // do nothing, expected to happen
+//     }
+// }
 
 // =============================================================================================
 // TEST SINGLE-LEAF TREE 
@@ -832,20 +844,25 @@ TEST_F(MVOidTest, LargeDescendingAfterRecoveryTest) {
 class MVOidFullTest : public testing::Test {
 public:
     MVTree *kv;
+    PMEMobjpool *pop;
     PMEMoid rootoid;
 
     MVOidFullTest() {
         std::remove(PATH.c_str());
+        pop = pmemobj_create(PATH.c_str(), LAYOUT.c_str(), SIZE, S_IRWXU);
         rootoid = OID_NULL;
         Open();
         rootoid = kv->GetRootOid();
     }
 
-    ~MVOidFullTest() { delete kv; }
+    ~MVOidFullTest() {
+        delete kv;
+        pmemobj_close(pop);
+    }
 
     void Reopen() {
         delete kv;
-        kv = new MVTree(PATH, rootoid, SIZE);
+        kv = new MVTree(pop, rootoid);
     }
 
     void Validate() {
@@ -873,7 +890,8 @@ public:
 
 private:
     void Open() {
-        kv = new MVTree(PATH, rootoid, SIZE);
+        std::cout << "!!! creating at " << PATH << "\n";
+        kv = new MVTree(pop, rootoid);
         rootoid = kv->GetRootOid();
         for (int i = 1; i <= LARGE_LIMIT; i++) {
             string istr = to_string(i);
