@@ -38,7 +38,7 @@
 #include <unistd.h>
 #include "mvtree.h"
 
-#define DO_LOG 0
+#define DO_LOG 1
 #define LOG(msg) if (DO_LOG) std::cout << "[mvtree] " << msg << "\n"
 
 namespace pmemkv {
