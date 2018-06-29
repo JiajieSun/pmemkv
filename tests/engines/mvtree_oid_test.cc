@@ -30,6 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <future>
 #include "gtest/gtest.h"
 #include "../mock_tx_alloc.h"
 #include "../../src/engines/mvtree.h"
@@ -761,19 +762,62 @@ TEST_F(MVOidTest, UsePreallocAfterMultipleLeafRecoveryTest) {
 // TEST LARGE TREE
 // =============================================================================================
 
-const int LARGE_LIMIT = 4000000;
+const int LARGE_LIMIT = 2000; // 4000000;
 
 TEST_F(MVOidTest, LargeAscendingTest) {
+    std::future<void> f1 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = 1; i <= LARGE_LIMIT/4; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
+                       string value;
+                       ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
+                     }
+                   });  
+
+    std::future<void> f2 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = LARGE_LIMIT/4+1; i <= LARGE_LIMIT/2; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
+                       string value;
+                       ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
+                     }
+                   });  
+    std::future<void> f3 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = LARGE_LIMIT/2+1; i <= LARGE_LIMIT/4*3; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
+                       string value;
+                       ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
+                     }
+                   });  
+    std::future<void> f4 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = LARGE_LIMIT/4*3+1; i <= LARGE_LIMIT; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
+                       string value;
+                       ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
+                     }
+                   });  
+
+    f1.wait();
+    f2.wait();
+    f3.wait();
+    f4.wait();
+
     for (int i = 1; i <= LARGE_LIMIT; i++) {
         string istr = to_string(i);
-        ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
         string value;
-        ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
-    }
-    for (int i = 1; i <= LARGE_LIMIT; i++) {
-        string istr = to_string(i);
-        string value;
-        ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
+        ASSERT_TRUE(kv->Get(istr, &value) == OK);
+        std::cout << "*******" << value << std::endl;
+        ASSERT_TRUE(value == (istr + "!"));
     }
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);

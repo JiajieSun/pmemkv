@@ -33,6 +33,7 @@
 #pragma once
 
 #include <vector>
+#include <shared_mutex>
 #include "../pmemkv.h"
 
 using std::move;
@@ -216,6 +217,7 @@ class MVTree : public KVEngine {                           // hybrid B+ tree eng
     pool_base pmpool;
     persistent_ptr<MVRoot> kv_root;                                      // pointer to persistent root
     unique_ptr<MVNode> tree_top;                           // pointer to uppermost inner node
+    std::shared_mutex shared_mutex;
 };
 
 } // namespace mvtree

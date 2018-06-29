@@ -39,7 +39,7 @@
 #include "mvtree.h"
 
 #define DO_LOG 0
-#define LOG(msg) if (DO_LOG) std::cout << "[kvtree2] " << msg << "\n"
+#define LOG(msg) if (DO_LOG) std::cout << "[mvtree] " << msg << "\n"
 
 namespace pmemkv {
 namespace mvtree {
@@ -222,6 +222,7 @@ KVStatus MVTree::Get(const int32_t limit, const int32_t keybytes, int32_t *value
 }
 
 KVStatus MVTree::Get(const string &key, string *value) {
+  std::shared_lock<std::shared_mutex> lock(shared_mutex);
   LOG("Get for key=" << key.c_str());
   auto leafnode = LeafSearch(key);
   if (leafnode) {
@@ -242,6 +243,7 @@ KVStatus MVTree::Get(const string &key, string *value) {
 }
 
 KVStatus MVTree::Put(const string &key, const string &value) {
+  std::lock_guard<std::shared_mutex> lock(shared_mutex);
   LOG("Put key=" << key.c_str() << ", value.size=" << to_string(value.size()));
   try {
     const uint8_t hash = PearsonHash(key.c_str(), key.size());
@@ -280,6 +282,7 @@ KVStatus MVTree::Put(const string &key, const string &value) {
 
 KVStatus MVTree::Remove(const string &key) {
   LOG("Remove key=" << key.c_str());
+  std::lock_guard<std::shared_mutex> lock(shared_mutex);
   auto leafnode = LeafSearch(key);
   if (!leafnode) {
     LOG("   head not present");

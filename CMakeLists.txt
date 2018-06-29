@@ -31,7 +31,7 @@
 cmake_minimum_required(VERSION 3.6)
 project(pmemkv)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(SOURCE_FILES src/pmemkv.cc src/pmemkv.h
     src/engines/blackhole.h src/engines/blackhole.cc
     src/engines/kvtree2.h src/engines/kvtree2.cc
