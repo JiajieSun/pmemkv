@@ -30,7 +30,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <future>
+#include <vector>
 #include "gtest/gtest.h"
+#include "mvtree_oid_test_data.h"
 #include "../mock_tx_alloc.h"
 #include "../../src/engines/mvtree.h"
 
@@ -60,6 +63,7 @@ public:
     MVTree *kv;
     PMEMobjpool *pop;
     PMEMoid rootoid;
+    MVOidTestData test_data;
 
     MVOidTest() {
         std::remove(PATH.c_str());
@@ -90,7 +94,6 @@ private:
         kv = new MVTree(pop, rootoid);
     }
 };
-
 // =============================================================================================
 // TEST EMPTY TREE with MVRoot on one newly created pmem object
 // =============================================================================================
@@ -764,21 +767,68 @@ TEST_F(MVOidTest, UsePreallocAfterMultipleLeafRecoveryTest) {
 const int LARGE_LIMIT = 4000000;
 
 TEST_F(MVOidTest, LargeAscendingTest) {
+  auto ff = [&](int l, int u, const string& label){ 
+              for (int i = l; i <= u; i++) {
+		      string istr = to_string(i);
+		      ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
+		      string value;
+		      ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
+	      }
+//              {
+//                std::cout << label << ": before put " << test_data.items[i] << std::endl;
+//                ASSERT_TRUE(kv->Put(test_data.items[i], (test_data.items[i] + "!")) == OK) << pmemobj_errormsg();
+//                string value;
+//                ASSERT_TRUE(kv->Get(test_data.items[i], &value) == OK);
+//                std::cout << label << ": we got " << value << std::endl;
+//                ASSERT_TRUE(value == (test_data.items[i] + "!"));
+//              }
+            };
+
+    std::thread f1(ff, 1, LARGE_LIMIT/8, "f1");
+    // std::async(std::launch::async, [&](){ ff(1, LARGE_LIMIT/8, "f1");});  
+
+    std::thread f2(ff, LARGE_LIMIT/8 + 1, LARGE_LIMIT * 2 / 8, "f2");
+        // std::async(std::launch::async, [&](){ ff(LARGE_LIMIT/8 + 1, LARGE_LIMIT * 2 / 8, "f2");});  
+
+    std::thread f3(ff, LARGE_LIMIT * 2 / 8 + 1, LARGE_LIMIT * 3 / 8, "f3");
+
+    std::thread f4(ff, LARGE_LIMIT * 3 / 8 + 1, LARGE_LIMIT * 4 / 8, "f4");
+
+    std::thread f5(ff, LARGE_LIMIT * 4 / 8 + 1, LARGE_LIMIT * 5 / 8, "f5");
+
+    std::thread f6(ff, LARGE_LIMIT * 5 / 8 + 1, LARGE_LIMIT * 6 / 8, "f6");
+
+    std::thread f7(ff, LARGE_LIMIT * 6 / 8 + 1, LARGE_LIMIT * 7 / 8, "f7");
+
+    std::thread f8(ff, LARGE_LIMIT * 7 / 8, LARGE_LIMIT, "f8");
+
+
+    f1.join();
+    f2.join();
+    f3.join();
+    f4.join();
+    f8.join();
+    f7.join();
+    f6.join();
+    f5.join();
+
     for (int i = 1; i <= LARGE_LIMIT; i++) {
         string istr = to_string(i);
-        ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
         string value;
-        ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
-    }
-    for (int i = 1; i <= LARGE_LIMIT; i++) {
-        string istr = to_string(i);
-        string value;
-        ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
+	ASSERT_TRUE(kv->Get(istr, &value) == OK);
+	ASSERT_TRUE(value == (istr + "!"));
+        // ASSERT_TRUE(kv->Get(test_data.items[i], &value) == OK);
+        // std::cout << "*******" << value << std::endl;
+        // ASSERT_TRUE(value == (test_data.items[i]+ "!"));
     }
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    ASSERT_EQ(analysis.leaf_total, 152455);
+    // ASSERT_EQ(analysis.leaf_total, 152455);
+    ASSERT_LE(analysis.leaf_total, 153000);
+    ASSERT_GE(analysis.leaf_total, 149000);
+
+
 }
 
 TEST_F(MVOidTest, LargeDescendingTest) {
@@ -796,7 +846,60 @@ TEST_F(MVOidTest, LargeDescendingTest) {
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    ASSERT_EQ(analysis.leaf_total, 150000);
+    // ASSERT_EQ(analysis.leaf_total, 150000);
+    ASSERT_LE(analysis.leaf_total, 151000);
+    ASSERT_GE(analysis.leaf_total, 149000);
+
+
+    // Let's test remove operation
+    std::future<void> f1 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = 1; i <= LARGE_LIMIT/4; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Remove(istr) == OK) << pmemobj_errormsg();
+                     }
+                   });  
+
+    std::future<void> f2 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = LARGE_LIMIT/4+1; i <= LARGE_LIMIT/2; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Remove(istr) == OK) << pmemobj_errormsg();
+                     }
+                   });  
+    std::future<void> f3 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = LARGE_LIMIT/2+1; i <= LARGE_LIMIT/4*3; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Remove(istr) == OK) << pmemobj_errormsg();
+                     }
+                   });  
+    std::future<void> f4 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = LARGE_LIMIT/4*3+1; i <= LARGE_LIMIT; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Remove(istr) == OK) << pmemobj_errormsg();
+                     }
+                   });  
+
+    f1.wait();
+    f2.wait();
+    f3.wait();
+    f4.wait();
+
+    if(kv->TotalNumKeys() == 0) {
+      std::cout << "Removed to 0 successfully!!" << std::endl;
+    } else {
+      std::cout << "Removed to " << kv->TotalNumKeys() << std::endl;
+    }
+
+    EXPECT_EQ(0, kv->TotalNumKeys()) << "TotalNumKeys shall be 0";
+
+
 }
 
 // =============================================================================================
@@ -817,7 +920,11 @@ TEST_F(MVOidTest, LargeAscendingAfterRecoveryTest) {
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    ASSERT_EQ(analysis.leaf_total, 152455);
+    // ASSERT_EQ(analysis.leaf_total, 152455);
+    ASSERT_LE(analysis.leaf_total, 153000);
+    ASSERT_GE(analysis.leaf_total, 149000);
+
+
 }
 
 TEST_F(MVOidTest, LargeDescendingAfterRecoveryTest) {
@@ -834,7 +941,11 @@ TEST_F(MVOidTest, LargeDescendingAfterRecoveryTest) {
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    ASSERT_EQ(analysis.leaf_total, 150000);
+    // ASSERT_EQ(analysis.leaf_total, 150000);
+    ASSERT_LE(analysis.leaf_total, 153000);
+    ASSERT_GE(analysis.leaf_total, 149000);
+
+
 }
 
 // =============================================================================================

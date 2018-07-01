@@ -55,6 +55,18 @@ KVEngine* KVEngine::Open(const string& engine, const string& path, const size_t 
     }
 }
 
+KVEngine* KVEngine::Open(const string& engine, PMEMobjpool* pop) {
+     try {
+        if(engine == mvtree::ENGINE) {
+            return new mvtree::MVTree(pop);
+        } else {
+            return nullptr;
+        }
+    } catch (...) {
+        return nullptr;
+    } 
+}
+
 KVEngine* KVEngine::Open(const string& engine, PMEMobjpool* pop, const PMEMoid& oid) {
     try {
         if(engine == mvtree::ENGINE) {
@@ -92,7 +104,11 @@ void KVEngine::Free(KVEngine* kv) {
 extern "C" KVEngine* kvengine_open(const char* engine, const char* path, const size_t size) {
     return KVEngine::Open(engine, path, size);
 };
-
+   
+extern "C" KVEngine* kvengine_open_root(const char* engine, PMEMobjpool* pop) {
+    return KVEngine::Open(engine, pop);
+};
+   
 extern "C" KVEngine* kvengine_open_obj(const char* engine, PMEMobjpool* pop, PMEMoid oid) {
     return KVEngine::Open(engine, pop, oid);
 }
