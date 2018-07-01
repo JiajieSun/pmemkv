@@ -57,7 +57,8 @@ using std::vector;
 
 namespace pmemkv {
 
-const string LAYOUT = "pmemkv";                            // pool layout identifier
+// const string LAYOUT = "pmemkv";                            // pool layout identifier
+const string LAYOUT = "dmo_pmem_obj_pool_layout";                            // pool layout identifier
 
 class KVEngine {                                           // storage engine implementations
   public:
@@ -129,6 +130,8 @@ KVEngine* kvengine_open(const char* engine,                // open storage engin
                         const char* path,
                         size_t size);
 
+KVEngine* kvengine_open_root(const char* engine,                // open storage engine
+                        PMEMobjpool* pop);
 
 KVEngine* kvengine_open_obj(const char* engine,                // open storage engine
                             PMEMobjpool* pop,

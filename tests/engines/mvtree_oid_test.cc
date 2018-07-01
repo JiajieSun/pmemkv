@@ -31,8 +31,9 @@
  */
 
 #include <future>
-#include <map>
+#include <vector>
 #include "gtest/gtest.h"
+#include "mvtree_oid_test_data.h"
 #include "../mock_tx_alloc.h"
 #include "../../src/engines/mvtree.h"
 
@@ -62,6 +63,7 @@ public:
     MVTree *kv;
     PMEMobjpool *pop;
     PMEMoid rootoid;
+    MVOidTestData test_data;
 
     MVOidTest() {
         std::remove(PATH.c_str());
@@ -92,7 +94,6 @@ private:
         kv = new MVTree(pop, rootoid);
     }
 };
-
 // =============================================================================================
 // TEST EMPTY TREE with MVRoot on one newly created pmem object
 // =============================================================================================
@@ -763,269 +764,71 @@ TEST_F(MVOidTest, UsePreallocAfterMultipleLeafRecoveryTest) {
 // TEST LARGE TREE
 // =============================================================================================
 
-const int LARGE_LIMIT = 2000; // 4000000;
+const int LARGE_LIMIT = 4000000;
 
 TEST_F(MVOidTest, LargeAscendingTest) {
-  std::map<string, string> = {
-    { "n01950731_11432.JPEG", "n01950731_11432.JPEG" }
-{ "n01950731_3712.JPEG ", "n01950731_3712.JPEG " }
-{ "n01950731_344.JPEG", "n01950731_344.JPEG" }
-{ "n01950731_12614.JPEG", "n01950731_12614.JPEG" }
-{ "n01950731_14730.JPEG", "n01950731_14730.JPEG" }
-{ "n01950731_2425.JPEG", "n01950731_2425.JPEG" }
-{ "n01950731_13765.JPEG", "n01950731_13765.JPEG" }
-{ "n01950731_8413.JPEG", "n01950731_8413.JPEG" }
-{ "n01950731_10425.JPEG", "n01950731_10425.JPEG" }
-{ "n01950731_12448.JPEG", "n01950731_12448.JPEG" }
-{ "n01950731_8179.JPEG", "n01950731_8179.JPEG" }
-{ "n01950731_4601.JPEG", "n01950731_4601.JPEG" }
-{ "n01950731_8969.JPEG", "n01950731_8969.JPEG" }
-{ "n01950731_12933.JPEG", "n01950731_12933.JPEG" }
-{ "n01950731_11736.JPEG", "n01950731_11736.JPEG" }
-{ "n01950731_2016.JPEG", "n01950731_2016.JPEG" }
-{ "n01950731_13225.JPEG", "n01950731_13225.JPEG" }
-{ "n01950731_2268.JPEG", "n01950731_2268.JPEG" }
-{ "n01950731_2157.JPEG", "n01950731_2157.JPEG" }
-{ "n01950731_728.JPEG", "n01950731_728.JPEG" }
-{ "n01950731_12167.JPEG", "n01950731_12167.JPEG" }
-{ "n01950731_12610.JPEG", "n01950731_12610.JPEG" }
-{ "n01950731_5002.JPEG", "n01950731_5002.JPEG" }
-{ "n01950731_16869.JPEG", "n01950731_16869.JPEG" }
-{ "n01950731_7906.JPEG", "n01950731_7906.JPEG" }
-{ "n01950731_22717.JPEG", "n01950731_22717.JPEG" }
-{ "n01950731_15680.JPEG", "n01950731_15680.JPEG" }
-{ "n01950731_2727.JPEG", "n01950731_2727.JPEG" }
-{ "n01950731_16418.JPEG", "n01950731_16418.JPEG" }
-{ "n01950731_13447.JPEG", "n01950731_13447.JPEG" }
-{ "n01950731_12661.JPEG", "n01950731_12661.JPEG" }
-{ "n01950731_13992.JPEG", "n01950731_13992.JPEG" }
-{ "n01950731_14347.JPEG", "n01950731_14347.JPEG" }
-{ "n01950731_14203.JPEG", "n01950731_14203.JPEG" }
-{ "n01950731_22795.JPEG", "n01950731_22795.JPEG" }
-{ "n01950731_15462.JPEG", "n01950731_15462.JPEG" }
-{ "n01950731_12996.JPEG", "n01950731_12996.JPEG" }
-{ "n01950731_9661.JPEG", "n01950731_9661.JPEG" }
-{ "n01950731_4133.JPEG", "n01950731_4133.JPEG" }
-{ "n01950731_4376.JPEG", "n01950731_4376.JPEG" }
-{ "n01950731_10431.JPEG", "n01950731_10431.JPEG" }
-{ "n01950731_13433.JPEG", "n01950731_13433.JPEG" }
-{ "n01950731_13188.JPEG", "n01950731_13188.JPEG" }
-{ "n01950731_5054.JPEG", "n01950731_5054.JPEG" }
-{ "n01950731_2848.JPEG", "n01950731_2848.JPEG" }
-{ "n01950731_12859.JPEG", "n01950731_12859.JPEG" }
-{ "n01950731_19865.JPEG", "n01950731_19865.JPEG" }
-{ "n01950731_12513.JPEG", "n01950731_12513.JPEG" }
-{ "n01950731_16906.JPEG", "n01950731_16906.JPEG" }
-{ "n01950731_13723.JPEG", "n01950731_13723.JPEG" }
-{ "n01950731_12605.JPEG", "n01950731_12605.JPEG" }
-{ "n01950731_8445.JPEG", "n01950731_8445.JPEG" }
-{ "n01950731_23528.JPEG", "n01950731_23528.JPEG" }
-{ "n01950731_16379.JPEG", "n01950731_16379.JPEG" }
-{ "n01950731_15784.JPEG", "n01950731_15784.JPEG" }
-{ "n01950731_2560.JPEG", "n01950731_2560.JPEG" }
-{ "n01950731_3240.JPEG", "n01950731_3240.JPEG" }
-{ "n01950731_12482.JPEG", "n01950731_12482.JPEG" }
-{ "n01950731_16004.JPEG", "n01950731_16004.JPEG" }
-{ "n01950731_15732.JPEG", "n01950731_15732.JPEG" }
-{ "n01950731_16556.JPEG", "n01950731_16556.JPEG" }
-{ "n01950731_23520.JPEG", "n01950731_23520.JPEG" }
-{ "n01950731_17543.JPEG", "n01950731_17543.JPEG" }
-{ "n01950731_10361.JPEG", "n01950731_10361.JPEG" }
-{ "n01950731_15817.JPEG", "n01950731_15817.JPEG" }
-{ "n01950731_28650.JPEG", "n01950731_28650.JPEG" }
-{ "n01950731_10662.JPEG", "n01950731_10662.JPEG" }
-{ "n01950731_12724.JPEG", "n01950731_12724.JPEG" }
-{ "n01950731_28627.JPEG", "n01950731_28627.JPEG" }
-{ "n01950731_9370.JPEG", "n01950731_9370.JPEG" }
-{ "n01950731_12121.JPEG", "n01950731_12121.JPEG" }
-{ "n01950731_4250.JPEG", "n01950731_4250.JPEG" }
-{ "n01950731_21421.JPEG", "n01950731_21421.JPEG" }
-{ "n01950731_21428.JPEG", "n01950731_21428.JPEG" }
-{ "n01950731_13350.JPEG", "n01950731_13350.JPEG" }
-{ "n01950731_11759.JPEG", "n01950731_11759.JPEG" }
-{ "n01950731_8905.JPEG", "n01950731_8905.JPEG" }
-{ "n01950731_9356.JPEG", "n01950731_9356.JPEG" }
-{ "n01950731_11644.JPEG", "n01950731_11644.JPEG" }
-{ "n01950731_2131.JPEG", "n01950731_2131.JPEG" }
-{ "n01950731_21332.JPEG", "n01950731_21332.JPEG" }
-{ "n01950731_10245.JPEG", "n01950731_10245.JPEG" }
-{ "n01950731_8923.JPEG", "n01950731_8923.JPEG" }
-{ "n01950731_13802.JPEG", "n01950731_13802.JPEG" }
-{ "n01950731_13457.JPEG", "n01950731_13457.JPEG" }
-{ "n01950731_20767.JPEG", "n01950731_20767.JPEG" }
-{ "n01950731_9232.JPEG", "n01950731_9232.JPEG" }
-{ "n01950731_15655.JPEG", "n01950731_15655.JPEG" }
-{ "n01950731_13048.JPEG", "n01950731_13048.JPEG" }
-{ "n01950731_14388.JPEG", "n01950731_14388.JPEG" }
-{ "n01950731_171.JPEG", "n01950731_171.JPEG" }
-{ "n01950731_16381.JPEG", "n01950731_16381.JPEG" }
-{ "n01950731_8291.JPEG", "n01950731_8291.JPEG" }
-{ "n01950731_11745.JPEG", "n01950731_11745.JPEG" }
-{ "n01950731_10150.JPEG", "n01950731_10150.JPEG" }
-{ "n01950731_18103.JPEG", "n01950731_18103.JPEG" }
-{ "n01950731_651.JPEG", "n01950731_651.JPEG" }
-{ "n01950731_1936.JPEG", "n01950731_1936.JPEG" }
-{ "n01950731_16139.JPEG", "n01950731_16139.JPEG" }
-{ "n01950731_13698.JPEG", "n01950731_13698.JPEG" }
-{ "n01950731_5652.JPEG", "n01950731_5652.JPEG" }
-{ "n01950731_3264.JPEG", "n01950731_3264.JPEG" }
-{ "n01950731_33840.JPEG", "n01950731_33840.JPEG" }
-{ "n01950731_15823.JPEG", "n01950731_15823.JPEG" }
-{ "n01950731_8536.JPEG", "n01950731_8536.JPEG" }
-{ "n01950731_11743.JPEG", "n01950731_11743.JPEG" }
-{ "n01950731_399.JPEG", "n01950731_399.JPEG" }
-{ "n01950731_1638.JPEG", "n01950731_1638.JPEG" }
-{ "n01950731_14977.JPEG", "n01950731_14977.JPEG" }
-{ "n01950731_12745.JPEG", "n01950731_12745.JPEG" }
-{ "n01950731_9817.JPEG", "n01950731_9817.JPEG" }
-{ "n01950731_16398.JPEG", "n01950731_16398.JPEG" }
-{ "n01950731_5126.JPEG", "n01950731_5126.JPEG" }
-{ "n01950731_15796.JPEG", "n01950731_15796.JPEG" }
-{ "n01950731_11079.JPEG", "n01950731_11079.JPEG" }
-{ "n01950731_14091.JPEG", "n01950731_14091.JPEG" }
-{ "n01950731_15389.JPEG", "n01950731_15389.JPEG" }
-{ "n01950731_6654.JPEG", "n01950731_6654.JPEG" }
-{ "n01950731_14208.JPEG", "n01950731_14208.JPEG" }
-{ "n01950731_16103.JPEG", "n01950731_16103.JPEG" }
-{ "n01950731_12013.JPEG", "n01950731_12013.JPEG" }
-{ "n01950731_13563.JPEG", "n01950731_13563.JPEG" }
-{ "n01950731_16693.JPEG", "n01950731_16693.JPEG" }
-{ "n01950731_33114.JPEG", "n01950731_33114.JPEG" }
-{ "n01950731_17974.JPEG", "n01950731_17974.JPEG" }
-{ "n01950731_16544.JPEG", "n01950731_16544.JPEG" }
-{ "n01950731_2291.JPEG", "n01950731_2291.JPEG" }
-{ "n01950731_8517.JPEG", "n01950731_8517.JPEG" }
-{ "n01950731_8093.JPEG", "n01950731_8093.JPEG" }
-{ "n01950731_10695.JPEG", "n01950731_10695.JPEG" }
-{ "n01950731_21212.JPEG", "n01950731_21212.JPEG" }
-{ "n01950731_141.JPEG", "n01950731_141.JPEG" }
-{ "n01950731_17768.JPEG", "n01950731_17768.JPEG" }
-{ "n01950731_12912.JPEG", "n01950731_12912.JPEG" }
-{ "n01950731_23310.JPEG", "n01950731_23310.JPEG" }
-{ "n01950731_3595.JPEG", "n01950731_3595.JPEG" }
-{ "n01950731_4663.JPEG", "n01950731_4663.JPEG" }
-{ "n01950731_12904.JPEG", "n01950731_12904.JPEG" }
-{ "n01950731_10174.JPEG", "n01950731_10174.JPEG" }
-{ "n01950731_9098.JPEG", "n01950731_9098.JPEG" }
-{ "n01950731_18145.JPEG", "n01950731_18145.JPEG" }
-{ "n01950731_11086.JPEG", "n01950731_11086.JPEG" }
-{ "n01950731_1096.JPEG", "n01950731_1096.JPEG" }
-{ "n01950731_4722.JPEG", "n01950731_4722.JPEG" }
-{ "n01950731_16414.JPEG", "n01950731_16414.JPEG" }
-{ "n01950731_13959.JPEG", "n01950731_13959.JPEG" }
-{ "n01950731_21003.JPEG", "n01950731_21003.JPEG" }
-{ "n01950731_1533.JPEG", "n01950731_1533.JPEG" }
-{ "n01950731_17603.JPEG", "n01950731_17603.JPEG" }
-{ "n01950731_4046.JPEG", "n01950731_4046.JPEG" }
-{ "n01950731_15157.JPEG", "n01950731_15157.JPEG" }
-{ "n01950731_13094.JPEG", "n01950731_13094.JPEG" }
-{ "n01950731_4998.JPEG", "n01950731_4998.JPEG" }
-{ "n01950731_1335.JPEG", "n01950731_1335.JPEG" }
-{ "n01950731_20980.JPEG", "n01950731_20980.JPEG" }
-{ "n01950731_6396.JPEG", "n01950731_6396.JPEG" }
-{ "n01950731_22546.JPEG", "n01950731_22546.JPEG" }
-{ "n01950731_8596.JPEG", "n01950731_8596.JPEG" }
-{ "n01950731_4399.JPEG", "n01950731_4399.JPEG" }
-{ "n01950731_14466.JPEG", "n01950731_14466.JPEG" }
-{ "n01950731_6412.JPEG", "n01950731_6412.JPEG" }
-{ "n01950731_11842.JPEG", "n01950731_11842.JPEG" }
-{ "n01950731_14154.JPEG", "n01950731_14154.JPEG" }
-{ "n01950731_7578.JPEG", "n01950731_7578.JPEG" }
-{ "n01950731_10520.JPEG", "n01950731_10520.JPEG" }
-{ "n01950731_26161.JPEG", "n01950731_26161.JPEG" }
-{ "n01950731_13996.JPEG", "n01950731_13996.JPEG" }
-{ "n01950731_13091.JPEG", "n01950731_13091.JPEG" }
-{ "n01950731_12932.JPEG", "n01950731_12932.JPEG" }
-{ "n01950731_17641.JPEG", "n01950731_17641.JPEG" }
-{ "n01950731_6403.JPEG", "n01950731_6403.JPEG" }
-{ "n01950731_11822.JPEG", "n01950731_11822.JPEG" }
-{ "n01950731_17474.JPEG", "n01950731_17474.JPEG" }
-{ "n01950731_12921.JPEG", "n01950731_12921.JPEG" }
-{ "n01950731_7424.JPEG", "n01950731_7424.JPEG" }
-{ "n01950731_12223.JPEG", "n01950731_12223.JPEG" }
-{ "n01950731_2601.JPEG", "n01950731_2601.JPEG" }
-{ "n01950731_10261.JPEG", "n01950731_10261.JPEG" }
-{ "n01950731_9317.JPEG", "n01950731_9317.JPEG" }
-{ "n01950731_17432.JPEG", "n01950731_17432.JPEG" }
-{ "n01950731_6978.JPEG", "n01950731_6978.JPEG" }
-{ "n01950731_21393.JPEG", "n01950731_21393.JPEG" }
-{ "n01950731_9505.JPEG", "n01950731_9505.JPEG" }
-{ "n01950731_968.JPEG", "n01950731_968.JPEG" }
-{ "n01950731_15621.JPEG", "n01950731_15621.JPEG" }
-{ "n01950731_11614.JPEG", "n01950731_11614.JPEG" }
-{ "n01950731_4152.JPEG", "n01950731_4152.JPEG" }
-{ "n01950731_12998.JPEG", "n01950731_12998.JPEG" }
-{ "n01950731_9951.JPEG", "n01950731_9951.JPEG" }
-{ "n01950731_7573.JPEG", "n01950731_7573.JPEG" }
-{ "n01950731_14574.JPEG", "n01950731_14574.JPEG" }
-{ "n01950731_20029.JPEG", "n01950731_20029.JPEG" }
-{ "n01950731_1180.JPEG", "n01950731_1180.JPEG" }
-{ "n01950731_5888.JPEG", "n01950731_5888.JPEG" }
-{ "n01950731_15052.JPEG", "n01950731_15052.JPEG" }
-{ "n01950731_14317.JPEG", "n01950731_14317.JPEG" }
-{ "n01950731_24023.JPEG", "n01950731_24023.JPEG" }
-{ "n01950731_30122.JPEG", "n01950731_30122.JPEG" }
-{ "n01950731_12205.JPEG", "n01950731_12205.JPEG" }
-{ "n01950731_7396.JPEG", "n01950731_7396.JPEG" }
-{ "n01950731_13243.JPEG", "n01950731_13243.JPEG" }};
-    std::future<void> f1 =
-        std::async(std::launch::async,
-                   [&](){ 
-                     for (int i = 1; i <= LARGE_LIMIT/4; i++) {
-                       string istr = to_string(i);
-                       ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
-                       string value;
-                       ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
-                     }
-                   });  
+  auto ff = [&](int l, int u, const string& label){ 
+              for (int i = l; i <= u; i++) {
+		      string istr = to_string(i);
+		      ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
+		      string value;
+		      ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
+	      }
+//              {
+//                std::cout << label << ": before put " << test_data.items[i] << std::endl;
+//                ASSERT_TRUE(kv->Put(test_data.items[i], (test_data.items[i] + "!")) == OK) << pmemobj_errormsg();
+//                string value;
+//                ASSERT_TRUE(kv->Get(test_data.items[i], &value) == OK);
+//                std::cout << label << ": we got " << value << std::endl;
+//                ASSERT_TRUE(value == (test_data.items[i] + "!"));
+//              }
+            };
 
-    std::future<void> f2 =
-        std::async(std::launch::async,
-                   [&](){ 
-                     for (int i = LARGE_LIMIT/4+1; i <= LARGE_LIMIT/2; i++) {
-                       string istr = to_string(i);
-                       ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
-                       string value;
-                       ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
-                     }
-                   });  
-    std::future<void> f3 =
-        std::async(std::launch::async,
-                   [&](){ 
-                     for (int i = LARGE_LIMIT/2+1; i <= LARGE_LIMIT/4*3; i++) {
-                       string istr = to_string(i);
-                       ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
-                       string value;
-                       ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
-                     }
-                   });  
-    std::future<void> f4 =
-        std::async(std::launch::async,
-                   [&](){ 
-                     for (int i = LARGE_LIMIT/4*3+1; i <= LARGE_LIMIT; i++) {
-                       string istr = to_string(i);
-                       ASSERT_TRUE(kv->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
-                       string value;
-                       ASSERT_TRUE(kv->Get(istr, &value) == OK && value == (istr + "!"));
-                     }
-                   });  
+    std::thread f1(ff, 1, LARGE_LIMIT/8, "f1");
+    // std::async(std::launch::async, [&](){ ff(1, LARGE_LIMIT/8, "f1");});  
 
-    f1.wait();
-    f2.wait();
-    f3.wait();
-    f4.wait();
+    std::thread f2(ff, LARGE_LIMIT/8 + 1, LARGE_LIMIT * 2 / 8, "f2");
+        // std::async(std::launch::async, [&](){ ff(LARGE_LIMIT/8 + 1, LARGE_LIMIT * 2 / 8, "f2");});  
+
+    std::thread f3(ff, LARGE_LIMIT * 2 / 8 + 1, LARGE_LIMIT * 3 / 8, "f3");
+
+    std::thread f4(ff, LARGE_LIMIT * 3 / 8 + 1, LARGE_LIMIT * 4 / 8, "f4");
+
+    std::thread f5(ff, LARGE_LIMIT * 4 / 8 + 1, LARGE_LIMIT * 5 / 8, "f5");
+
+    std::thread f6(ff, LARGE_LIMIT * 5 / 8 + 1, LARGE_LIMIT * 6 / 8, "f6");
+
+    std::thread f7(ff, LARGE_LIMIT * 6 / 8 + 1, LARGE_LIMIT * 7 / 8, "f7");
+
+    std::thread f8(ff, LARGE_LIMIT * 7 / 8, LARGE_LIMIT, "f8");
+
+
+    f1.join();
+    f2.join();
+    f3.join();
+    f4.join();
+    f8.join();
+    f7.join();
+    f6.join();
+    f5.join();
 
     for (int i = 1; i <= LARGE_LIMIT; i++) {
         string istr = to_string(i);
         string value;
-        ASSERT_TRUE(kv->Get(istr, &value) == OK);
-        std::cout << "*******" << value << std::endl;
-        ASSERT_TRUE(value == (istr + "!"));
+	ASSERT_TRUE(kv->Get(istr, &value) == OK);
+	ASSERT_TRUE(value == (istr + "!"));
+        // ASSERT_TRUE(kv->Get(test_data.items[i], &value) == OK);
+        // std::cout << "*******" << value << std::endl;
+        // ASSERT_TRUE(value == (test_data.items[i]+ "!"));
     }
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    ASSERT_EQ(analysis.leaf_total, 152455);
+    // ASSERT_EQ(analysis.leaf_total, 152455);
+    ASSERT_LE(analysis.leaf_total, 153000);
+    ASSERT_GE(analysis.leaf_total, 149000);
+
+
 }
 
 TEST_F(MVOidTest, LargeDescendingTest) {
@@ -1043,7 +846,60 @@ TEST_F(MVOidTest, LargeDescendingTest) {
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    ASSERT_EQ(analysis.leaf_total, 150000);
+    // ASSERT_EQ(analysis.leaf_total, 150000);
+    ASSERT_LE(analysis.leaf_total, 151000);
+    ASSERT_GE(analysis.leaf_total, 149000);
+
+
+    // Let's test remove operation
+    std::future<void> f1 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = 1; i <= LARGE_LIMIT/4; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Remove(istr) == OK) << pmemobj_errormsg();
+                     }
+                   });  
+
+    std::future<void> f2 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = LARGE_LIMIT/4+1; i <= LARGE_LIMIT/2; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Remove(istr) == OK) << pmemobj_errormsg();
+                     }
+                   });  
+    std::future<void> f3 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = LARGE_LIMIT/2+1; i <= LARGE_LIMIT/4*3; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Remove(istr) == OK) << pmemobj_errormsg();
+                     }
+                   });  
+    std::future<void> f4 =
+        std::async(std::launch::async,
+                   [&](){ 
+                     for (int i = LARGE_LIMIT/4*3+1; i <= LARGE_LIMIT; i++) {
+                       string istr = to_string(i);
+                       ASSERT_TRUE(kv->Remove(istr) == OK) << pmemobj_errormsg();
+                     }
+                   });  
+
+    f1.wait();
+    f2.wait();
+    f3.wait();
+    f4.wait();
+
+    if(kv->TotalNumKeys() == 0) {
+      std::cout << "Removed to 0 successfully!!" << std::endl;
+    } else {
+      std::cout << "Removed to " << kv->TotalNumKeys() << std::endl;
+    }
+
+    EXPECT_EQ(0, kv->TotalNumKeys()) << "TotalNumKeys shall be 0";
+
+
 }
 
 // =============================================================================================
@@ -1064,7 +920,11 @@ TEST_F(MVOidTest, LargeAscendingAfterRecoveryTest) {
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    ASSERT_EQ(analysis.leaf_total, 152455);
+    // ASSERT_EQ(analysis.leaf_total, 152455);
+    ASSERT_LE(analysis.leaf_total, 153000);
+    ASSERT_GE(analysis.leaf_total, 149000);
+
+
 }
 
 TEST_F(MVOidTest, LargeDescendingAfterRecoveryTest) {
@@ -1081,7 +941,11 @@ TEST_F(MVOidTest, LargeDescendingAfterRecoveryTest) {
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    ASSERT_EQ(analysis.leaf_total, 150000);
+    // ASSERT_EQ(analysis.leaf_total, 150000);
+    ASSERT_LE(analysis.leaf_total, 153000);
+    ASSERT_GE(analysis.leaf_total, 149000);
+
+
 }
 
 // =============================================================================================

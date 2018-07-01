@@ -136,21 +136,8 @@ struct MVTreeAnalysis {                                    // tree analysis stru
 class MVTree : public KVEngine {                           // hybrid B+ tree engine
   public:
 
-    static KVEngine* Open(const string& engine,            // open storage engine
-                          const string& path,              // path to persistent pool
-                          size_t size);                    // size used when creating pool
-
-    static KVEngine* OpenOid(const string& engine,            // open storage engine
-                          const string& path,              // path to persistent pool
-                          PMEMoid rootoid,
-                          size_t size);                    // size used when creating pool
-
-    static KVEngine* OpenPopOid(const string& engine,            // open storage engine
-                          PMEMobjpool* pop,              // path to persistent pool
-                          PMEMoid rootoid,
-                          size_t size);                    // size used when creating pool
-
     // constructor to create or open root object based KVEngine
+    // with pool not created or not opened
     MVTree (const string& path, size_t size);  
 
     // constructor to create or open root object based KVEngine

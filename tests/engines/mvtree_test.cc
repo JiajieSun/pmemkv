@@ -760,14 +760,9 @@ TEST_F(MVTest, UsePreallocAfterMultipleLeafRecoveryTest) {
 // TEST LARGE TREE
 // =============================================================================================
 
-const int LARGE_LIMIT = 2000; // 4000000;
+const int LARGE_LIMIT = 4000000;
 
 TEST_F(MVTest, LargeAscendingTest) {
-    std::map<string, string> m = {
-      {"1", "a"},
-      {"3", "b"},
-      {"5", "c"},
-      {"7", "d"}};
     std::future<void> f1 =
         std::async(std::launch::async,
                    [&](){ 
@@ -820,13 +815,16 @@ TEST_F(MVTest, LargeAscendingTest) {
         string istr = to_string(i);
         string value;
         ASSERT_TRUE(kv->Get(istr, &value) == OK);
-        std::cout << "*******" << value << std::endl;
+        // std::cout << "*******" << value << std::endl;
         ASSERT_TRUE(value == (istr + "!"));
     }
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    ASSERT_EQ(analysis.leaf_total, 152455);
+    // ASSERT_EQ(analysis.leaf_total, 152455);
+    ASSERT_LE(analysis.leaf_total, 153000);
+    ASSERT_GE(analysis.leaf_total, 149000);
+
 }
 
 TEST_F(MVTest, LargeDescendingTest) {
@@ -844,7 +842,9 @@ TEST_F(MVTest, LargeDescendingTest) {
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    EXPECT_EQ(analysis.leaf_total, 150000);
+    // ASSERT_EQ(analysis.leaf_total, 150000);
+    ASSERT_LE(analysis.leaf_total, 151000);
+    ASSERT_GE(analysis.leaf_total, 149000);
 
     // Let's test remove operation
     std::future<void> f1 =
@@ -914,7 +914,11 @@ TEST_F(MVTest, LargeAscendingAfterRecoveryTest) {
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    ASSERT_EQ(analysis.leaf_total, 152455);
+    // ASSERT_EQ(analysis.leaf_total, 152455);
+    ASSERT_LE(analysis.leaf_total, 153000);
+    ASSERT_GE(analysis.leaf_total, 149000);
+
+
 }
 
 TEST_F(MVTest, LargeDescendingAfterRecoveryTest) {
@@ -931,7 +935,11 @@ TEST_F(MVTest, LargeDescendingAfterRecoveryTest) {
     Analyze();
     ASSERT_EQ(analysis.leaf_empty, 0);
     ASSERT_EQ(analysis.leaf_prealloc, 0);
-    ASSERT_EQ(analysis.leaf_total, 150000);
+    // ASSERT_EQ(analysis.leaf_total, 150000);
+    ASSERT_LE(analysis.leaf_total, 151000);
+    ASSERT_GE(analysis.leaf_total, 149000);
+
+
 }
 
 
