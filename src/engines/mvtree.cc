@@ -68,6 +68,22 @@ MVTree::MVTree (const string& path, size_t size): pmpath(path) {
   LOG("Opened ok");
 }
 
+
+// Ctor to support existing pop with root object as kvroot
+// pop is already opened
+MVTree::MVTree (PMEMobjpool* pop): pmpool(pop), pmpath(PMPATH_NO_PATH) {
+  assert(pop != nullptr);
+
+  LOG("retrieve or create root object of pmem"); 
+  pool<MVRoot> popMV(pmpool);
+  kv_root = popMV.get_root();
+  LOG("pop=" << pop << ", oid=" << kv_root.raw().off);
+
+  Recover();
+  LOG("Opened ok");
+}
+
+
 // Ctor to access or create KVEngine of non-root object
 // assuming pop is already opened,
 // and we won't call pop.close in dtor
