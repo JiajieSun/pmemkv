@@ -66,6 +66,12 @@ class KVEngine {                                           // storage engine imp
                           const string& path,              // path to persistent pool
                           size_t size);                    // size used when creating pool
 
+    // Open a pmemobj_root based KVEngine
+    // Here we require pop is opened
+    static KVEngine* Open(const string& engine,            // open storage engine
+                          PMEMobjpool* pop);              // path to persistent pool
+
+
     // Open a pmemobj based KVEngine
     static KVEngine* Open(const string& engine,  // open storage engine
                           PMEMobjpool* pop,

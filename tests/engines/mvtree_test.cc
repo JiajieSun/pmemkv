@@ -31,6 +31,7 @@
  */
 
 #include <future>
+#include <map>
 #include "gtest/gtest.h"
 #include "../mock_tx_alloc.h"
 #include "../../src/engines/mvtree.h"
@@ -762,6 +763,11 @@ TEST_F(MVTest, UsePreallocAfterMultipleLeafRecoveryTest) {
 const int LARGE_LIMIT = 2000; // 4000000;
 
 TEST_F(MVTest, LargeAscendingTest) {
+    std::map<string, string> m = {
+      {"1", "a"},
+      {"3", "b"},
+      {"5", "c"},
+      {"7", "d"}};
     std::future<void> f1 =
         std::async(std::launch::async,
                    [&](){ 

@@ -55,6 +55,18 @@ KVEngine* KVEngine::Open(const string& engine, const string& path, const size_t 
     }
 }
 
+KVEngine* Open(const string& engine, PMEMobjpool* pop) {
+     try {
+        if(engine == mvtree::ENGINE) {
+            return new mvtree::MVTree(pop);
+        } else {
+            return nullptr;
+        }
+    } catch (...) {
+        return nullptr;
+    } 
+}
+
 KVEngine* KVEngine::Open(const string& engine, PMEMobjpool* pop, const PMEMoid& oid) {
     try {
         if(engine == mvtree::ENGINE) {
