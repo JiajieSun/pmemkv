@@ -194,59 +194,5 @@ class KVTree : public KVEngine {                           // hybrid B+ tree eng
     unique_ptr<KVNode> tree_top;                           // pointer to uppermost inner node
 };
 
-class KVFreeTree : public KVEngine {                           // hybrid B+ tree engine
-  public:
-    KVFreeTree(pool_base & a_pmpool, persistent_ptr<KVRoot> a_kv_root, size_t size);               // default constructor
-    ~KVFreeTree();                                             // default destructor
-
-    string Engine() final { return ENGINE; }               // engine identifier
-    KVStatus Get(int32_t limit,                            // copy value to fixed-size buffer
-                 int32_t keybytes,
-                 int32_t* valuebytes,
-                 const char* key,
-                 char* value) final;
-    KVStatus Get(const string& key,                        // append value to std::string
-                 string* value) final;
-    KVStatus Put(const string& key,                        // copy value from std::string
-                 const string& value) final;
-    KVStatus Remove(const string& key) final;              // remove value for key
-
-    void Analyze(KVTreeAnalysis& analysis);                // report on internal state & stats
-  protected:
-    KVLeafNode* LeafSearch(const string& key);             // find node for key
-    void LeafFillEmptySlot(KVLeafNode* leafnode,           // write first unoccupied slot found
-                           uint8_t hash,
-                           const string& key,
-                           const string& value);
-    bool LeafFillSlotForKey(KVLeafNode* leafnode,          // write slot for matching key if found
-                            uint8_t hash,
-                            const string& key,
-                            const string& value);
-    void LeafFillSpecificSlot(KVLeafNode* leafnode,        // write slot at specific index
-                              uint8_t hash,
-                              const string& key,
-                              const string& value,
-                              int slot);
-    void LeafSplitFull(KVLeafNode* leafnode,               // split full leaf into two leaves
-                       uint8_t hash,
-                       const string& key,
-                       const string& value);
-    void InnerUpdateAfterSplit(KVNode* node,               // update parents after leaf split
-                               unique_ptr<KVNode> newnode,
-                               string* split_key);
-    uint8_t PearsonHash(const char* data,                  // calculate 1-byte hash for string
-                        size_t size);
-    void Recover();                                        // reload state from persistent pool
-    persistent_ptr<KVRoot> GetRoot();
-  private:
-    KVFreeTree(const KVFreeTree&);                                 // prevent copying
-    void operator=(const KVFreeTree&);                         // prevent assigning
-    vector<persistent_ptr<KVLeaf>> leaves_prealloc;        // persisted but unused leaves
-    const string pmpath;                                   // path when constructed
-    pool_base & pmpool;
-    persistent_ptr<KVRoot> kv_root;                                      // pointer to persistent root
-    unique_ptr<KVNode> tree_top;                           // pointer to uppermost inner node
-};
-
 } // namespace kvtree
 } // namespace pmemkv
