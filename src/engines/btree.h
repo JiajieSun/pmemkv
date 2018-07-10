@@ -57,7 +57,7 @@ class BTreeEngine : public KVEngine {
     BTreeEngine(const BTreeEngine&);
     void operator=(const BTreeEngine&);
   public:
-    BTreeEngine(const string& path, size_t size);               // default constructor
+    BTreeEngine(const string& path, size_t size, const string& layout);               // default constructor
     ~BTreeEngine();                                             // default destructor
 
     string Engine() final { return ENGINE; }                    // engine identifier

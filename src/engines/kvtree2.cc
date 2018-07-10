@@ -44,17 +44,21 @@
 namespace pmemkv {
 namespace kvtree2 {
 
-KVTree::KVTree(const string& path, const size_t size) : pmpath(path) {
+KVTree::KVTree(const string& path, const size_t size, const string layout) : pmpath(path) {
     if ((access(path.c_str(), F_OK) != 0) && (size > 0)) {
         LOG("Creating filesystem pool, path=" << path << ", size=" << to_string(size));
-        pmpool = pool<KVRoot>::create(path.c_str(), LAYOUT, size, S_IRWXU);
+        pmpool = pool<KVRoot>::create(path.c_str(), layout, size, S_IRWXU);
     } else {
         LOG("Opening pool, path=" << path);
-        pmpool = pool<KVRoot>::open(path.c_str(), LAYOUT);
+        pmpool = pool<KVRoot>::open(path.c_str(), layout);
     }
     Recover();
     LOG("Opened ok");
 }
+
+// KVTree::KVTree(const string& path, const size_t size)
+//         : KVTree(path, size, layout) {}
+
 
 KVTree::~KVTree() {
     LOG("Closing");

@@ -52,15 +52,15 @@ static const string PMPATH_NO_PATH = "nopath";
 
 // Ctor to access or create KVEngine of the root object
 // path is in a state of not create or not opened
-MVTree::MVTree (const string& path, size_t size): pmpath(path) {
+MVTree::MVTree (const string& path, size_t size, const string& layout): pmpath(path) {
   if ((access(path.c_str(), F_OK) != 0) && (size > 0)) {
     LOG("Creating filesystem pool, path=" << path << ", size=" << to_string(size));
-    pool<MVRoot> pop = pool<MVRoot>::create(path.c_str(), LAYOUT, size, S_IRWXU);
+    pool<MVRoot> pop = pool<MVRoot>::create(path.c_str(), layout, size, S_IRWXU);
     pmpool = pop;
     kv_root = pop.get_root();
   } else {
     LOG("Opening pool, path=" << path);
-    pool<MVRoot> pop = pool<MVRoot>::open(path.c_str(), LAYOUT);
+    pool<MVRoot> pop = pool<MVRoot>::open(path.c_str(), layout);
     pmpool = pop;
     kv_root = pop.get_root();
   }

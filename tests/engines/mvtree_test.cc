@@ -40,6 +40,7 @@ using namespace pmemkv::mvtree;
 
 const string PATH = "/dev/shm/pmemkv";
 const string PATH_CACHED = "/tmp/pmemkv";
+const string LAYOUT = "pmemkv";
 const size_t SIZE = ((size_t) (1024 * 1024 * 1104));
 
 class MVEmptyTest : public testing::Test {
@@ -74,7 +75,7 @@ public:
 
 private:
     void Open() {
-        kv = new MVTree(PATH, SIZE);
+        kv = new MVTree(PATH, SIZE, LAYOUT);
     }
 };
 
@@ -83,7 +84,7 @@ private:
 // =============================================================================================
 
 TEST_F(MVEmptyTest, CreateInstanceTest) {
-    MVTree *kv = new MVTree(PATH, PMEMOBJ_MIN_POOL);
+    MVTree *kv = new MVTree(PATH, PMEMOBJ_MIN_POOL, LAYOUT);
     MVTreeAnalysis analysis = {};
     kv->Analyze(analysis);
     ASSERT_EQ(analysis.leaf_empty, 0);
@@ -94,7 +95,7 @@ TEST_F(MVEmptyTest, CreateInstanceTest) {
 
 TEST_F(MVEmptyTest, FailsToCreateInstanceWithInvalidPath) {
     try {
-        new MVTree("/tmp/123/234/345/456/567/678/nope.nope", PMEMOBJ_MIN_POOL);
+        new MVTree("/tmp/123/234/345/456/567/678/nope.nope", PMEMOBJ_MIN_POOL, LAYOUT);
         FAIL();
     } catch (...) {
         // do nothing, expected to happen
@@ -103,7 +104,7 @@ TEST_F(MVEmptyTest, FailsToCreateInstanceWithInvalidPath) {
 
 TEST_F(MVEmptyTest, FailsToCreateInstanceWithHugeSize) {
     try {
-        new MVTree(PATH, 9223372036854775807);   // 9.22 exabytes
+        new MVTree(PATH, 9223372036854775807, LAYOUT);   // 9.22 exabytes
         FAIL();
     } catch (...) {
         // do nothing, expected to happen
@@ -112,7 +113,7 @@ TEST_F(MVEmptyTest, FailsToCreateInstanceWithHugeSize) {
 
 TEST_F(MVEmptyTest, FailsToCreateInstanceWithTinySize) {
     try {
-        new MVTree(PATH, PMEMOBJ_MIN_POOL - 1);  // too small
+        new MVTree(PATH, PMEMOBJ_MIN_POOL - 1, LAYOUT);  // too small
         FAIL();
     } catch (...) {
         // do nothing, expected to happen
@@ -960,7 +961,7 @@ public:
 
     void Reopen() {
         delete kv;
-        kv = new MVTree(PATH, SIZE);
+        kv = new MVTree(PATH, SIZE, LAYOUT);
     }
 
     void Validate() {
@@ -992,7 +993,7 @@ private:
             ASSERT_TRUE(std::system(("cp -f " + PATH_CACHED + " " + PATH).c_str()) == 0);
         } else {
             std::cout << "!!! creating cached copy at " << PATH_CACHED << "\n";
-            MVTree *kvt = new MVTree(PATH, SIZE);
+            MVTree *kvt = new MVTree(PATH, SIZE, LAYOUT);
             for (int i = 1; i <= LARGE_LIMIT; i++) {
                 string istr = to_string(i);
                 ASSERT_TRUE(kvt->Put(istr, (istr + "!")) == OK) << pmemobj_errormsg();
@@ -1000,7 +1001,7 @@ private:
             delete kvt;
             ASSERT_TRUE(std::system(("cp -f " + PATH + " " + PATH_CACHED).c_str()) == 0);
         }
-        kv = new MVTree(PATH, SIZE);
+        kv = new MVTree(PATH, SIZE, LAYOUT);
     }
 };
 

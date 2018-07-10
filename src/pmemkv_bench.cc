@@ -69,6 +69,9 @@ static const char *FLAGS_benchmarks =
 // Default engine name
 static const char *FLAGS_engine = "kvtree2";
 
+// Default layout
+static const char *LAYOUT = "pmemkv";
+
 // Number of key/values to place in database
 static int FLAGS_num = 1000000;
 
@@ -488,7 +491,7 @@ private:
     void Open() {
         assert(kv_ == NULL);
         auto start = g_env->NowMicros();
-        kv_ = pmemkv::KVEngine::Open(FLAGS_engine, FLAGS_db, ((size_t) 1024 * 1024 * 1024 * FLAGS_db_size_in_gb));
+        kv_ = pmemkv::KVEngine::Open(FLAGS_engine, FLAGS_db, ((size_t) 1024 * 1024 * 1024 * FLAGS_db_size_in_gb, LAYOUT));
         if (kv_ == nullptr) {
             fprintf(stderr, "Cannot open db (%s) with %i GB capacity\n", FLAGS_db, FLAGS_db_size_in_gb);
             exit(-42);
