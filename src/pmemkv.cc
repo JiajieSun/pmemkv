@@ -37,16 +37,20 @@
 
 namespace pmemkv {
 
-KVEngine* KVEngine::Open(const string& engine, const string& path, const size_t size) {
+KVEngine* KVEngine::Open(const string& engine,
+                         const string& path,
+                         const size_t size,
+                         const string& layout
+                         ) {
     try {
         if (engine == blackhole::ENGINE) {
             return new blackhole::Blackhole();
         } else if(engine == mvtree::ENGINE) {
-            return new mvtree::MVTree(path, size);
+            return new mvtree::MVTree(path, size, layout);
         }  else if (engine == kvtree2::ENGINE) {
-            return new kvtree2::KVTree(path, size);
+            return new kvtree2::KVTree(path, size, layout);
         } else if (engine == btree::ENGINE) {
-            return new btree::BTreeEngine(path, size);
+            return new btree::BTreeEngine(path, size, layout);
         } else {
             return nullptr;
         }
@@ -54,6 +58,14 @@ KVEngine* KVEngine::Open(const string& engine, const string& path, const size_t 
         return nullptr;
     }
 }
+
+KVEngine* KVEngine::Open(const string& engine,           
+                         const string& path,           
+                         size_t size) {
+    return Open(engine, path, size, LAYOUT);
+}
+
+
 
 KVEngine* KVEngine::Open(const string& engine, PMEMobjpool* pop) {
      try {
@@ -103,6 +115,10 @@ void KVEngine::Free(KVEngine* kv) {
 
 extern "C" KVEngine* kvengine_open(const char* engine, const char* path, const size_t size) {
     return KVEngine::Open(engine, path, size);
+};
+
+extern "C" KVEngine* kvengine_open_with_layout(const char* engine, const char* path, const size_t size, const char* layout) {
+    return KVEngine::Open(engine, path, size, layout);
 };
    
 extern "C" KVEngine* kvengine_open_root(const char* engine, PMEMobjpool* pop) {
