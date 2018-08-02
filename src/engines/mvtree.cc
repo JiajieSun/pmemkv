@@ -52,15 +52,15 @@ static const string PMPATH_NO_PATH = "nopath";
 
 // Ctor to access or create KVEngine of the root object
 // path is in a state of not create or not opened
-MVTree::MVTree (const string& path, size_t size): pmpath(path) {
+MVTree::MVTree (const string& path, size_t size, const string& layout): pmpath(path) {
   if ((access(path.c_str(), F_OK) != 0) && (size > 0)) {
     LOG("Creating filesystem pool, path=" << path << ", size=" << to_string(size));
-    pool<MVRoot> pop = pool<MVRoot>::create(path.c_str(), LAYOUT, size, S_IRWXU);
+    pool<MVRoot> pop = pool<MVRoot>::create(path.c_str(), layout, size, S_IRWXU);
     pmpool = pop;
     kv_root = pop.get_root();
   } else {
     LOG("Opening pool, path=" << path);
-    pool<MVRoot> pop = pool<MVRoot>::open(path.c_str(), LAYOUT);
+    pool<MVRoot> pop = pool<MVRoot>::open(path.c_str(), layout);
     pmpool = pop;
     kv_root = pop.get_root();
   }
@@ -131,6 +131,8 @@ PMEMobjpool* MVTree::GetPool() {
 
 void MVTree::Analyze(MVTreeAnalysis &analysis) {
   LOG("Analyzing");
+  
+  std::shared_lock<std::shared_mutex> lock(shared_mutex);
   analysis.leaf_empty = 0;
   analysis.leaf_prealloc = leaves_prealloc.size();
   analysis.leaf_total = 0;
@@ -157,6 +159,8 @@ void MVTree::Analyze(MVTreeAnalysis &analysis) {
  
 void MVTree::ListAllKeyValuePairs(vector<string>& kv_pairs) {
     LOG("Listing");
+
+    std::shared_lock<std::shared_mutex> lock(shared_mutex);
     // iterate persistent leaves for stats
     auto leaf = kv_root->head;
     while (leaf) {
@@ -174,6 +178,8 @@ void MVTree::ListAllKeyValuePairs(vector<string>& kv_pairs) {
 
 void MVTree::ListAllKeys(vector<string>& keys) {
     LOG("Listing");
+
+    std::shared_lock<std::shared_mutex> lock(shared_mutex);
     // iterate persistent leaves for stats
     auto leaf = kv_root->head;
     while (leaf) {
@@ -190,6 +196,8 @@ void MVTree::ListAllKeys(vector<string>& keys) {
 
 size_t MVTree::TotalNumKeys() {
     size_t size = 0;
+
+    std::shared_lock<std::shared_mutex> lock(shared_mutex);
     LOG("Getting size");
     // iterate persistent leaves for stats
     auto leaf = kv_root->head;
@@ -209,6 +217,8 @@ size_t MVTree::TotalNumKeys() {
 
 KVStatus MVTree::Get(const int32_t limit, const int32_t keybytes, int32_t *valuebytes,
                          const char *key, char *value) {
+
+  std::shared_lock<std::shared_mutex> lock(shared_mutex);
   auto ckey = std::string(key, keybytes);
   LOG("Get for key=" << ckey);
   auto leafnode = LeafSearch(ckey);
@@ -237,8 +247,9 @@ KVStatus MVTree::Get(const int32_t limit, const int32_t keybytes, int32_t *value
 }
 
 KVStatus MVTree::Get(const string &key, string *value) {
-  std::shared_lock<std::shared_mutex> lock(shared_mutex);
   LOG("Get for key=" << key.c_str());
+
+  std::shared_lock<std::shared_mutex> lock(shared_mutex);
   auto leafnode = LeafSearch(key);
   if (leafnode) {
     const uint8_t hash = PearsonHash(key.c_str(), key.size());
@@ -258,8 +269,8 @@ KVStatus MVTree::Get(const string &key, string *value) {
 }
 
 KVStatus MVTree::Put(const string &key, const string &value) {
-  std::lock_guard<std::shared_mutex> lock(shared_mutex);
   LOG("Put key=" << key.c_str() << ", value.size=" << to_string(value.size()));
+  std::unique_lock<std::shared_mutex> lock(shared_mutex);
   try {
     const uint8_t hash = PearsonHash(key.c_str(), key.size());
     auto leafnode = LeafSearch(key);
@@ -297,7 +308,7 @@ KVStatus MVTree::Put(const string &key, const string &value) {
 
 KVStatus MVTree::Remove(const string &key) {
   LOG("Remove key=" << key.c_str());
-  std::lock_guard<std::shared_mutex> lock(shared_mutex);
+  std::unique_lock<std::shared_mutex> lock(shared_mutex);
   auto leafnode = LeafSearch(key);
   if (!leafnode) {
     LOG("   head not present");
@@ -326,13 +337,14 @@ void MVTree::Free() {
   LOG("Free the tree"); 
   // TODO impl
   if(kv_root != nullptr) {
-      persistent_ptr<MVLeaf> pLeaf = kv_root->head;
-      while(pLeaf != nullptr) {
-          persistent_ptr<MVLeaf> pt = pLeaf->next;
-          delete_persistent_atomic<MVLeaf>(pLeaf);
-          pLeaf = pt;
-      }
-      delete_persistent_atomic<MVRoot>(kv_root);
+    std::unique_lock<std::shared_mutex> lock(shared_mutex);
+    persistent_ptr<MVLeaf> pLeaf = kv_root->head;
+    while(pLeaf != nullptr) {
+      persistent_ptr<MVLeaf> pt = pLeaf->next;
+      delete_persistent_atomic<MVLeaf>(pLeaf);
+      pLeaf = pt;
+    }
+    delete_persistent_atomic<MVRoot>(kv_root);
   }
 }
 
@@ -525,8 +537,12 @@ void MVTree::InnerUpdateAfterSplit(MVNode *node, unique_ptr<MVNode> new_node, st
 void MVTree::Recover() {
   LOG("Recovering");
 
+
   // traverse persistent leaves to build list of leaves to recover
   std::list<MVRecoveredLeaf> leaves;
+
+  std::unique_lock<std::shared_mutex> lock(shared_mutex);
+
   auto leaf = kv_root->head;
   while (leaf) {
     unique_ptr<MVLeafNode> leafnode(new MVLeafNode());

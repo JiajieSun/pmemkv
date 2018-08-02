@@ -138,7 +138,8 @@ class MVTree : public KVEngine {                           // hybrid B+ tree eng
 
     // constructor to create or open root object based KVEngine
     // with pool not created or not opened
-    MVTree (const string& path, size_t size);  
+    MVTree (const string& path, size_t size, const string& layout);  
+    // MVTree (const string& path, size_t size);  
 
     // constructor to create or open root object based KVEngine
     // with pool already opened

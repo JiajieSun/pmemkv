@@ -58,7 +58,6 @@ using std::vector;
 namespace pmemkv {
 
 const string LAYOUT = "pmemkv";                            // pool layout identifier
-// const string LAYOUT = "dmo_pmem_obj_pool_layout";                            // pool layout identifier
 
 class KVEngine {                                           // storage engine implementations
   public:
@@ -66,6 +65,12 @@ class KVEngine {                                           // storage engine imp
     static KVEngine* Open(const string& engine,            // open storage engine
                           const string& path,              // path to persistent pool
                           size_t size);                    // size used when creating pool
+
+    // Open a pmemobj_root based KVEngine
+    static KVEngine* Open(const string& engine,            // open storage engine
+                          const string& path,              // path to persistent pool
+                          size_t size,                    // size used when creating pool
+                          const string& layout);
 
     // Open a pmemobj_root based KVEngine
     // Here we require pop is opened
@@ -129,6 +134,11 @@ typedef struct FFIBuffer FFIBuffer;
 KVEngine* kvengine_open(const char* engine,                // open storage engine
                         const char* path,
                         size_t size);
+
+KVEngine* kvengine_open_with_layout(const char* engine,                // open storage engine
+                        const char* path,
+                        size_t size,
+                        const char* layout);
 
 KVEngine* kvengine_open_root(const char* engine,                // open storage engine
                         PMEMobjpool* pop);
